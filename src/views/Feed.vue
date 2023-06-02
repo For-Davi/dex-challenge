@@ -1,6 +1,18 @@
 <template>
   <div id="feed">
-    <div class="group-list" v-if="!loading">
+    
+    <div class="group-list" v-if="!loading && !errorList">
+      <header>
+        <nav>
+          <ul>
+            <li>User: <span>{{ infoUser.name }}</span></li>
+            <li>Email: <span>{{ infoUser.email }}</span></li>
+          </ul>
+        </nav>
+        <div class="logout">
+          <button @click="logout">Sair</button>
+        </div> 
+      </header>
       <h2>Listagem de usuários</h2>
       <div class="users-group">
         <div class="user" v-for="(user,index) in users" :key="index">
@@ -22,17 +34,23 @@
           </div>
         </div>
       </div>
-      <div class="logout">
-        <button @click="logout">Sair</button>
-      </div>  
+       
     </div><!--group-list-->
-    <div class="loading" v-else="loading">
+
+    <div class="loading" v-if="loading && !errorList">
         <p>Estamos agora carregando seu Feed!</p>
         <div class="circle"></div>
     </div><!--loading-->
+
+    <div class="errorList" v-show="errorList">
+      <div class="title">
+        <p>Não foi possível completar a requisição, tente novamente mais tarde!</p>
+        <button @click="goFeed">Voltar para tela de Login</button>
+      </div>
+    </div>
   </div>
 </template>
-
+ 
 <script>
 
   import axios from 'axios'
@@ -44,7 +62,9 @@
       return{
         url:'https://dex-dev-app001.azurewebsites.net',
         users : [],
-        loading : false
+        infoUser: '',
+        loading : false,
+        errorList : false
       }
     },
     methods: {
@@ -54,10 +74,15 @@
           localStorage.clear()
           this.$router.push('/')
         }
+      },
+      goFeed(){
+        localStorage.clear()
+        this.$router.push('/')
       }
     },
     async mounted(){
       const permission =  localStorage.getItem('authenticated')
+      
 
       if(permission === 'true'){
         this.loading = true
@@ -69,17 +94,23 @@
                   "Accept":"application/json",
                   "Authorization": `Bearer ${token}`
                 }
+                
+                if(localStorage.getItem('user')){
+                  this.infoUser = JSON.parse(localStorage.getItem('user')) 
+                } 
   
                 try {
                   
                   const response = await axios.get(`${url}/api/usuarios/getUsuarios`, {headers})
                   this.users = response.data.usuarios
                   this.loading = false
+                  
                 
                 } catch(error){
   
                   console.log(error);
                   this.loading = false
+                  this.errorList = true
                 }
       } else {
         this.$router.push('/')
@@ -99,12 +130,109 @@
     align-items: center;
     flex-direction: column;
 
+    .errorList{
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+
+      .title{
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-direction: column;
+        gap: 20px;
+
+        p{
+          color: #fff;
+          font-size: 30px;
+          padding: 20px 0px;
+        }
+
+        button{
+          width: 50%;
+          max-width: 300px;
+          background-color:rgb(216, 103, 103) ;
+          border-radius: 5px;
+          border: none;
+          color: #fff;
+          padding: 10px;
+          cursor: pointer;
+          transition: all 0.3s;
+
+          &:hover{
+            opacity: 0.9;
+          }
+        }
+      }
+    }
+
+    
+
     .group-list{
       display: flex;
       justify-content: center;
       align-items: center;
       box-sizing: border-box;
       flex-direction: column;
+
+      header{
+      display: flex;
+      width: 100%;
+      justify-content: space-between;
+      align-items: center;
+      flex-direction: row;
+      .logout{
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px 0px;
+      box-sizing: border-box;
+
+      button{
+        width: 100%;
+        border: none;
+        background-color: rgb(216, 103, 103);
+        color: #fff;
+        padding: 5px 10px;
+        border-radius: 5px;
+        cursor: pointer;
+        margin-right: 50px;
+        transition: all 0.3s;
+
+        &:hover{
+          opacity: 0.9;
+        }
+      }
+    }
+
+      nav{
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        
+
+        ul{
+          display: flex;
+          justify-content: space-around;
+          align-items: center;
+          flex-direction: row;
+          list-style: none;
+           
+          li{
+            color: #fff;
+            padding: 5px 10px;
+            margin-right: 10px;
+            margin-left: 10px;
+            font-weight: 600;
+
+            span{
+              font-weight: 400;
+            }
+          }
+        }
+      }
+    }
     
       h2{
         color: #fff;
@@ -187,27 +315,7 @@
       }
     }
 
-    .logout{
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      padding: 20px 0px;
-      box-sizing: border-box;
-
-      button{
-        width: 200px;
-        border: none;
-        background-color: rgb(216, 103, 103);
-        color: #fff;
-        padding: 5px 10px;
-        cursor: pointer;
-        transition: all 0.3s;
-
-        &:hover{
-          opacity: 0.9;
-        }
-      }
-    }
+    
     
 
   }
